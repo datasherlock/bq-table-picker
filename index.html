@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Which Table? Google Cloud table types, explained</title>
+  <meta name="description" content="One screen that shows which of the eight BigQuery and Lakehouse table types fit your needs, and how each engine reads and writes them.">
+  <meta property="og:title" content="Which Table? Google Cloud table types, explained">
+  <meta property="og:description" content="Pick what you need and see which of the eight BigQuery and Lakehouse table types fit, and why.">
+  <meta property="og:type" content="website">
+  <meta name="theme-color" content="#F6F7F9">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231F5FE0'/%3E%3Cpath d='M8 11h16M8 16h16M8 21h10' stroke='white' stroke-width='2.6' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=DM+Sans:opsz,wght@9..40,400;9..40,600&display=swap" rel="stylesheet">
+  <script>
+    (function () {
+      var saved = null;
+      try { saved = localStorage.getItem('theme'); } catch (e) {}
+      var dark = saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+      document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+    })();
+  </script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="bar">
+    <p class="brand"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9"/><path d="M8 11h16M8 16h16M8 21h10"/></svg>Which Table?</p>
+    <p class="tagline">Google Cloud table types, on one screen</p>
+    <div class="bar-actions">
+      <button class="text-btn" id="about" type="button">Sources</button>
+      <button class="text-btn" id="share" type="button">Copy link</button>
+      <button class="icon-btn" id="theme" type="button" aria-label="Switch between light and dark"></button>
+    </div>
+  </header>
+
+  <main class="app" id="app" data-view="flow">
+    <section class="col needs-col" aria-labelledby="needs-title">
+      <div class="col-head">
+        <h2 id="needs-title"><span class="step">1</span>What you need</h2>
+        <button class="text-btn" id="clear" type="button">Clear</button>
+      </div>
+      <div class="needs" id="needs" role="group" aria-labelledby="needs-title"></div>
+      <div class="summary" id="summary" role="status" aria-live="polite"></div>
+    </section>
+
+    <section class="col types-col" aria-labelledby="types-title">
+      <div class="col-head"><h2 id="types-title"><span class="step">2</span>Table types</h2></div>
+      <div class="rail" id="rail" role="tablist" aria-orientation="vertical" aria-labelledby="types-title"></div>
+    </section>
+
+    <article class="col panel" id="panel" role="tabpanel"></article>
+  </main>
+
+  <nav class="views" aria-label="Views">
+    <button type="button" data-view="needs">Needs</button>
+    <button type="button" data-view="types">Tables</button>
+    <button type="button" data-view="flow">Flow</button>
+  </nav>
+
+  <dialog class="sheet" id="more-dialog" aria-labelledby="more-title"></dialog>
+
+  <dialog class="sheet" id="about-dialog" aria-labelledby="about-title">
+    <div class="sheet-head">
+      <h2 id="about-title">Sources</h2>
+      <button class="icon-btn" type="button" data-close aria-label="Close"></button>
+    </div>
+    <p class="sheet-note" id="sources-note"></p>
+    <ul class="sources-list" id="sources-list"></ul>
+    <p class="sheet-note">An independent guide by Jerome Rajan. Not an official Google product. Google Cloud, BigQuery and Apache Iceberg are trademarks of their owners.</p>
+  </dialog>
+
+  <noscript><p style="padding:16px">This guide needs JavaScript to run.</p></noscript>
+  <script src="data.js"></script>
+  <script src="logic.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
