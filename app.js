@@ -157,7 +157,9 @@
       const v = /** @type {Verdict} */ (LOGIC.verdictFor(t, state.needs));
       const selected = t.id === state.type && !empty;
       row.className = `rail-row g-${t.group} v-${v.level}${t.id === bestId ? ' is-best' : ''}`;
-      /** @type {HTMLElement} */ (row.querySelector('.rail-badge')).textContent = t.id === bestId ? 'Best match' : t.badge ?? '';
+      const badge = t.id === bestId ? 'Best match'
+        : (t.preferred && (bestId || (v.level !== 'idle' && v.level !== 'fit'))) ? '' : (t.badge ?? '');
+      /** @type {HTMLElement} */ (row.querySelector('.rail-badge')).textContent = badge;
       row.setAttribute('aria-selected', String(selected));
       row.tabIndex = selected || (empty && t.id === typeIds[0]) ? 0 : -1;
       row.title = verdictText(v);
