@@ -34,7 +34,7 @@
   const NEED_GROUPS = [
     { id: 'engines', label: 'Engines & access' },
     { id: 'storage', label: 'Data & storage' },
-    { id: 'catalog', label: 'Catalog' },
+    { id: 'catalog', label: 'Existing catalog' },
     { id: 'security', label: 'Security' },
   ];
 
