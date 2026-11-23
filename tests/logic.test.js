@@ -72,11 +72,16 @@ test('known answers', () => {
   assert.deepEqual(fitIds(['direct', 'finegrained', 'openfiles']), ['runtime']);
 });
 
-test('the type to show follows the needs: recommended first, and nothing when nothing fits', () => {
+test('the type to show follows the needs: clear winner gets crowned, ties stay ties', () => {
   assert.equal(LOGIC.summarize(TYPES, []).pick, null);
-  assert.equal(LOGIC.summarize(TYPES, ['openfiles']).pick.type.id, 'runtime');
+  const openOnly = LOGIC.summarize(TYPES, ['openfiles']);
+  assert.equal(openOnly.pick.type.id, 'runtime');
+  assert.equal(openOnly.clearWinner, null);
+  assert.equal(LOGIC.summarize(TYPES, ['finegrained']).pick.type.id, 'standard');
   assert.equal(LOGIC.summarize(TYPES, ['bqsql']).pick.type.id, 'standard');
   assert.equal(LOGIC.summarize(TYPES, ['openfiles', 'policytags']).pick.type.id, 'managed');
+  assert.equal(LOGIC.summarize(TYPES, ['openfiles', 'policytags']).clearWinner, null);
+  assert.equal(LOGIC.summarize(TYPES, ['openfiles', 'bqsql']).clearWinner.type.id, 'managed');
   assert.equal(LOGIC.summarize(TYPES, ['direct', 'stream']).pick, null);
 });
 

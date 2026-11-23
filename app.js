@@ -115,9 +115,11 @@
     let html = '';
     if (state.needs.length === 0) {
       html = '<p class="tip">Tick what matters. The best match opens by itself.</p>';
-    } else if (s.fits.length > 0) {
-      html = `<p class="summary-count is-fit">${icon('check')}Best match</p>${pickList(s.fits.slice(0, 1))}`
-        + (s.fits.length > 1 ? `<p class="summary-also">Also fits</p>${pickList(s.fits.slice(1))}` : '');
+    } else if (s.fits.length === 1) {
+      html = `<p class="summary-count is-fit">${icon('check')}Best match</p>${pickList(s.fits)}`;
+    } else if (s.fits.length > 1) {
+      html = `<p class="summary-count is-fit">${icon('check')}${s.fits.length} fit</p>${pickList(s.fits)}`
+        + (tip ? '' : '<p class="tip">Pick who writes or add a rule to narrow this down.</p>');
     } else if (s.caveats.length > 0) {
       html = `<p class="summary-count is-caveat">${icon('caveat')}Closest, with a catch</p>${pickList(s.caveats)}`;
     } else {
@@ -148,7 +150,7 @@
       : v.level === 'out' ? `Does not fit. ${v.misses.map((r) => r.why).join(' ')}` : '';
 
   function paintRail() {
-    const bestId = LOGIC.summarize(TYPES, state.needs).best?.type.id;
+    const bestId = LOGIC.summarize(TYPES, state.needs).clearWinner?.type.id;
     const empty = noMatch();
     for (const t of /** @type {TableType[]} */ (TYPES)) {
       const row = el(`tab-${t.id}`);

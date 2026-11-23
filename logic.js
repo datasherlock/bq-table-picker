@@ -43,16 +43,21 @@
    */
   function summarize(types, needs) {
     const rows = types.map((type) => ({ type, verdict: verdictFor(type, needs) }));
-    /** Recommended types first; otherwise keep the listed order. @param {{ type: TableType }} a @param {{ type: TableType }} b */
-    const byPreference = (a, b) => Number(Boolean(b.type.preferred)) - Number(Boolean(a.type.preferred));
+    // Only prefer open-lakehouse recommended types when the reader asked for open files or open-engine access.
+    const openNeed = needs.some((n) => n === 'openfiles' || n === 'direct' || n === 'directread');
+    /** @param {{ type: TableType }} a @param {{ type: TableType }} b */
+    const byPreference = (a, b) => openNeed
+      ? Number(Boolean(b.type.preferred)) - Number(Boolean(a.type.preferred)) : 0;
     const fits = rows.filter((r) => r.verdict.level === 'fit').sort(byPreference);
     const caveats = rows.filter((r) => r.verdict.level === 'caveat').sort(byPreference);
     const outs = rows.filter((r) => r.verdict.level === 'out');
     const closest = outs.slice().sort((a, b) => a.verdict.misses.length - b.verdict.misses.length)[0] ?? null;
     const best = fits[0] ?? caveats[0] ?? null;
+    /** Only crown a single winner when one type stands alone; ties stay ties. */
+    const clearWinner = fits.length === 1 ? fits[0] : null;
     /** What to open when the needs change. Null when nothing fits: a wrong answer is worse than none. */
     const pick = best;
-    return { rows, fits, caveats, outs, best, closest, pick };
+    return { rows, fits, caveats, outs, best, clearWinner, closest, pick };
   }
 
   /**
