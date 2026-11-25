@@ -13,7 +13,7 @@
  * @typedef {{ ok: boolean, note?: string }} Rule
  * @typedef {'yes'|'partial'|'no'} FitLevel
  * @typedef {{ level: FitLevel, why?: string }} Fit
- * @typedef {'direct'|'bqsql'|'stream'|'directread'|'openfiles'|'othercloud'|'remotecatalog'|'hivemigrate'|'unstructured'|'finegrained'|'policytags'} NeedId
+ * @typedef {'direct'|'bqsql'|'stream'|'directread'|'openfiles'|'rawfiles'|'othercloud'|'remotecatalog'|'hivemigrate'|'unstructured'|'finegrained'|'policytags'} NeedId
  * @typedef {'engines'|'storage'|'catalog'|'security'} NeedGroup
  * @typedef {{
  *   id: string, name: string, short: string, group: 'bigquery'|'runtime',
@@ -45,6 +45,7 @@
     { id: 'stream', group: 'engines', chip: 'Stream in via BigQuery', label: 'Stream rows in through BigQuery', hint: 'Uses the BigQuery Storage Write API.' },
     { id: 'directread', group: 'engines', chip: 'Read without BigQuery API', label: 'Spark, Flink or Trino read without the BigQuery API', hint: 'Open engines read the table from storage via the catalog, without going through the BigQuery Storage Read API.' },
     { id: 'openfiles', group: 'storage', chip: 'Open files in my bucket', label: 'Open-format files in my own bucket', hint: 'Parquet or Iceberg files that you own.' },
+    { id: 'rawfiles', group: 'storage', chip: 'Delta, CSV, JSON or raw files', label: 'Delta Lake, CSV, JSON, ORC, Avro or raw Parquet files', hint: 'Existing files in your bucket that are not Apache Iceberg tables.' },
     { id: 'othercloud', group: 'storage', chip: 'Stays in another cloud', label: 'Data stays in another cloud', hint: 'Amazon S3, Azure or another data platform.' },
     { id: 'unstructured', group: 'storage', chip: 'Documents or media', label: 'The files are documents or media', hint: 'PDFs, images, audio or video.' },
     { id: 'remotecatalog', group: 'catalog', chip: 'Another catalog owns it', label: 'Another platform\'s catalog owns the tables', hint: 'For example Databricks Unity Catalog, Snowflake or AWS Glue.' },
@@ -92,6 +93,7 @@
         bqsql: { level: 'yes' },
         stream: { level: 'yes' },
         openfiles: { level: 'no', why: 'The data lives in BigQuery storage.' },
+        rawfiles: { level: 'no', why: 'The data is loaded into BigQuery storage, not read in place as files.' },
         othercloud: { level: 'no', why: 'The data is loaded into BigQuery storage.' },
         finegrained: { level: 'yes' },
         policytags: { level: 'yes' },
@@ -135,6 +137,7 @@
         bqsql: { level: 'yes' },
         stream: { level: 'yes' },
         openfiles: { level: 'yes' },
+        rawfiles: { level: 'no', why: 'Stores Apache Iceberg tables only.' },
         othercloud: { level: 'no', why: GCS_ONLY },
         finegrained: { level: 'yes' },
         policytags: { level: 'yes' },
@@ -178,6 +181,7 @@
         bqsql: { level: 'no', why: 'Read-only in BigQuery.' },
         stream: { level: 'no', why: 'Read-only in BigQuery.' },
         openfiles: { level: 'yes' },
+        rawfiles: { level: 'yes' },
         othercloud: { level: 'yes', why: 'Amazon S3 and Azure, through BigQuery Omni.' },
         finegrained: { level: 'yes' },
         policytags: { level: 'yes' },
@@ -224,6 +228,7 @@
         bqsql: { level: 'no', why: 'Read-only in BigQuery.' },
         stream: { level: 'no', why: 'Read-only in BigQuery.' },
         openfiles: { level: 'yes' },
+        rawfiles: { level: 'no', why: 'Reads Apache Iceberg tables only.' },
         othercloud: { level: 'yes' },
         finegrained: { level: 'yes', why: 'Rules apply to BigQuery queries only.' },
         policytags: { level: 'yes' },
@@ -268,6 +273,7 @@
         bqsql: { level: 'no', why: 'Read-only in BigQuery.' },
         stream: { level: 'no', why: 'Read-only in BigQuery.' },
         openfiles: { level: 'no', why: 'It lists files. It is not a table format.' },
+        rawfiles: { level: 'no', why: 'Lists unstructured files rather than querying structured rows and columns.' },
         othercloud: { level: 'no', why: 'Not available for files in AWS or Azure.' },
         finegrained: { level: 'partial', why: 'Row filters only. They control which files a person sees.' },
         policytags: { level: 'no', why: 'The columns are fixed file details, so there is nothing to tag.' },
@@ -316,6 +322,7 @@
         bqsql: { level: 'partial', why: 'BigQuery SQL writes are in Preview.' },
         stream: { level: 'no', why: 'The Storage Write API is not available. Stream with an open engine instead.' },
         openfiles: { level: 'yes' },
+        rawfiles: { level: 'no', why: 'This endpoint manages Apache Iceberg tables only.' },
         othercloud: { level: 'no', why: GCS_ONLY },
         finegrained: { level: 'yes', why: 'Rules apply to BigQuery queries. Turn on credential vending so other engines cannot skip them.' },
         policytags: { level: 'no', why: 'Uses data policies attached directly to columns.' },
@@ -359,6 +366,7 @@
         bqsql: { level: 'no', why: 'BigQuery can only read these tables.' },
         stream: { level: 'no', why: 'BigQuery can only read these tables.' },
         openfiles: { level: 'yes' },
+        rawfiles: { level: 'partial', why: 'Supports Parquet, ORC, Avro and Delta Lake, but not CSV/JSON or row and column security.' },
         othercloud: { level: 'no', why: GCS_ONLY },
         finegrained: { level: 'no', why: 'IAM permissions only.' },
         policytags: { level: 'no', why: 'IAM permissions only.' },
@@ -402,6 +410,7 @@
         bqsql: { level: 'no', why: 'Read-only on Google Cloud.' },
         stream: { level: 'no', why: 'Read-only on Google Cloud.' },
         openfiles: { level: 'partial', why: 'The files stay in the remote platform\'s storage.' },
+        rawfiles: { level: 'partial', why: 'Reads remote Iceberg tables (or Delta tables exposed over Iceberg REST / Delta Sharing), not raw bucket files.' },
         othercloud: { level: 'yes' },
         finegrained: { level: 'no', why: 'Table-level IAM only on Google Cloud.' },
         policytags: { level: 'no', why: 'Table-level IAM only on Google Cloud.' },

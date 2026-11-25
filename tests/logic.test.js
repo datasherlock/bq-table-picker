@@ -108,6 +108,8 @@ test('impossible combinations report the closest type', () => {
 test('new inputs lead to the types built for them', () => {
   assert.deepEqual(fitIds(['remotecatalog']), ['federated']);
   assert.deepEqual(fitIds(['hivemigrate']), ['hive']);
+  assert.equal(LOGIC.summarize(TYPES, ['rawfiles']).clearWinner.type.id, 'biglake');
+  assert.equal(LOGIC.summarize(TYPES, ['rawfiles', 'finegrained']).clearWinner.type.id, 'biglake');
   assert.equal(LOGIC.summarize(TYPES, ['directread', 'bqsql', 'stream']).pick.type.id, 'managed');
   assert.equal(LOGIC.verdictFor(byId('managed'), ['directread']).level, 'caveat');
   assert.equal(LOGIC.summarize(TYPES, ['directread']).pick.type.id, 'runtime');
