@@ -9,7 +9,7 @@
  *   preview - works directly, but the feature is in Preview
  *   none    - not possible
  *   outside - the engine works on the files without the table being involved
- * @typedef {{ kind: RouteKind, label?: string, note: string }} Route
+ * @typedef {{ kind: RouteKind, title?: string, label?: string, note: string }} Route
  * @typedef {{ ok: boolean, note?: string }} Rule
  * @typedef {'yes'|'partial'|'no'} FitLevel
  * @typedef {{ level: FitLevel, why?: string }} Fit
@@ -387,8 +387,8 @@
       catalog: { title: 'Lakehouse runtime catalog', sub: 'mirror of a remote catalog', owner: 'runtime' },
       storage: { title: 'Remote platform', sub: 'Databricks · Snowflake · AWS', where: 'remote' },
       write: {
-        bq: { kind: 'none', label: 'remote side writes', note: 'Read-only on Google Cloud.' },
-        other: { kind: 'none', label: 'remote side writes', note: 'Read-only on Google Cloud. The remote platform does all the writing.' },
+        bq: { kind: 'none', label: 'read-only in GCP', note: 'Read-only on Google Cloud. To save BigQuery results, write them into a Google Cloud table or export files.' },
+        other: { kind: 'outside', title: 'Remote platform', label: 'writes on home side', note: 'Databricks, Snowflake or AWS jobs write on the home platform as usual, and Google Cloud picks up changes on the next refresh. A Spark job that must write back connects directly to the remote catalog, not through this read-only mirror.' },
       },
       read: {
         bq: { kind: 'direct', note: 'Standard SQL queries, with no data copied.' },

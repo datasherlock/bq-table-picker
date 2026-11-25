@@ -267,9 +267,9 @@
       ${reasons.length ? `<h3>Against what you picked</h3>
         <ul class="know-list">${reasons.map((r) => `<li><strong>${esc(needLabel(r.need))}.</strong> ${esc(r.why)}</li>`).join('')}</ul>` : ''}
       <h3>Writing</h3>
-      <ul class="know-list">${engineLine('BigQuery', t.write.bq)}${engineLine(other, t.write.other)}</ul>
+      <ul class="know-list">${engineLine(t.write.bq.title ?? 'BigQuery', t.write.bq)}${engineLine(t.write.other.title ?? other, t.write.other)}</ul>
       <h3>Reading</h3>
-      <ul class="know-list">${engineLine('BigQuery', t.read.bq)}${engineLine(other, t.read.other)}</ul>
+      <ul class="know-list">${engineLine(t.read.bq.title ?? 'BigQuery', t.read.bq)}${engineLine(t.read.other.title ?? other, t.read.other)}</ul>
       <h3>Security rules</h3>
       <ul class="sec-grid">
         ${secItem('Row-level security', t.security.row)}${secItem('Column-level security', t.security.column)}
@@ -345,8 +345,8 @@
       ${dots(bqPath, bq.kind, mode)}${dots(otherPath, other.kind, mode)}
       ${node(L.cat, `owner-${t.catalog.owner}`, t.catalog.title, t.catalog.sub, false, 'catalog')}
       ${node(L.sto, `where-${t.storage.where}`, t.storage.title, t.storage.sub, false, 'storage')}
-      ${node(L.bq, `engine k-${bq.kind}`, 'BigQuery', bq.label ?? KIND[bq.kind].stage[mode], true, 'query', bq.note)}
-      ${node(L.other, `engine k-${other.kind}`, t.otherEngine, other.label ?? KIND[other.kind].stage[mode], true, 'engine', other.note)}
+      ${node(L.bq, `engine k-${bq.kind}`, bq.title ?? 'BigQuery', bq.label ?? KIND[bq.kind].stage[mode], true, 'query', bq.note)}
+      ${node(L.other, `engine k-${other.kind}`, other.title ?? t.otherEngine, other.label ?? KIND[other.kind].stage[mode], true, 'engine', other.note)}
       ${badge(L.bq, bq.kind)}${badge(L.other, other.kind)}
     </svg>`;
 
