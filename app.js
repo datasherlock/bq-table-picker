@@ -34,6 +34,7 @@
     catalog: 'M3 4h10M3 8h10M3 12h6',
     storage: 'M3 4.5c0-1.1 2.2-2 5-2s5 .9 5 2v7c0 1.1-2.2 2-5 2s-5-.9-5-2zM3 4.5c0 1.1 2.2 2 5 2s5-.9 5-2M3 8c0 1.1 2.2 2 5 2s5-.9 5-2',
     arrow: 'M3 8h10M9 4l4 4-4 4',
+    chevron: 'M4.5 6.5L8 10l3.5-3.5',
   };
   /** @param {keyof typeof PATHS} name */
   const icon = (name) => `<svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="${PATHS[name]}"/></svg>`;
@@ -87,18 +88,38 @@
   /* ---------- Needs ---------- */
 
   function buildNeeds() {
-    el('needs').innerHTML = NEED_GROUPS.map((/** @type {{ id: string, label: string }} */ g) => `
-      <div class="need-group"><p class="need-group-label">${esc(g.label)}</p><div class="chips">${NEEDS
-        .filter((/** @type {{ group: string }} */ n) => n.group === g.id)
+    el('needs').innerHTML = NEED_GROUPS.map((/** @type {{ id: string, label: string, kind: 'select'|'multi', any?: string }} */ g) => {
+      const items = NEEDS.filter((/** @type {{ group: string }} */ n) => n.group === g.id);
+      if (g.kind === 'select') {
+        const opts = `<option value="">${esc(g.any ?? 'Any')}</option>`
+          + items.map((/** @type {{ id: NeedId, chip: string }} */ n) => `<option value="${n.id}">${esc(n.chip)}</option>`).join('');
+        return `<div class="need-group">
+          <label class="need-group-label" for="sel-${g.id}">${esc(g.label)}</label>
+          <div class="select-wrap">
+            <select class="need-select" id="sel-${g.id}" data-group="${g.id}" data-active="false">${opts}</select>
+            ${icon('chevron')}
+          </div></div>`;
+      }
+      return `<div class="need-group"><p class="need-group-label">${esc(g.label)}</p><div class="chips">${items
         .map((/** @type {{ id: NeedId, chip: string, label: string, hint: string }} */ n) => `
           <button class="need" type="button" data-need="${n.id}" aria-pressed="false" title="${esc(`${n.label}. ${n.hint}`)}">
-            ${icon('check')}<span>${esc(n.chip)}</span></button>`).join('')}</div></div>`).join('');
+            ${icon('check')}<span>${esc(n.chip)}</span></button>`).join('')}</div></div>`;
+    }).join('');
   }
 
   function paintNeeds() {
     el('needs').querySelectorAll('.need').forEach((btn) => {
       const id = /** @type {NeedId} */ (/** @type {HTMLElement} */ (btn).dataset.need);
       btn.setAttribute('aria-pressed', String(state.needs.includes(id)));
+    });
+    el('needs').querySelectorAll('.need-select').forEach((node) => {
+      const sel = /** @type {HTMLSelectElement} */ (node);
+      const group = sel.dataset.group;
+      const items = NEEDS.filter((/** @type {{ group: string }} */ n) => n.group === group);
+      const active = items.find((/** @type {{ id: NeedId }} */ n) => state.needs.includes(n.id));
+      sel.value = active ? active.id : '';
+      sel.dataset.active = String(Boolean(active));
+      sel.title = active ? `${active.label}. ${active.hint}` : '';
     });
     /** @type {HTMLButtonElement} */ (el('clear')).disabled = state.needs.length === 0;
   }
@@ -157,8 +178,7 @@
       const v = /** @type {Verdict} */ (LOGIC.verdictFor(t, state.needs));
       const selected = t.id === state.type && !empty;
       row.className = `rail-row g-${t.group} v-${v.level}${t.id === bestId ? ' is-best' : ''}`;
-      const badge = t.id === bestId ? 'Best match'
-        : (t.preferred && (bestId || (v.level !== 'idle' && v.level !== 'fit'))) ? '' : (t.badge ?? '');
+      const badge = t.id === bestId ? 'Best match' : (t.badge ?? '');
       /** @type {HTMLElement} */ (row.querySelector('.rail-badge')).textContent = badge;
       row.setAttribute('aria-selected', String(selected));
       row.tabIndex = selected || (empty && t.id === typeIds[0]) ? 0 : -1;
@@ -448,6 +468,16 @@
     if (!btn) return;
     const id = /** @type {NeedId} */ (btn.dataset.need);
     setNeeds(state.needs.includes(id) ? state.needs.filter((n) => n !== id) : [...state.needs, id]);
+  });
+
+  el('needs').addEventListener('change', (e) => {
+    const sel = /** @type {HTMLSelectElement | null} */ (hit(e, '.need-select'));
+    if (!sel) return;
+    const group = sel.dataset.group;
+    const groupIds = new Set(NEEDS.filter((/** @type {{ group: string }} */ n) => n.group === group).map((/** @type {{ id: NeedId }} */ n) => n.id));
+    const rest = state.needs.filter((n) => !groupIds.has(n));
+    const picked = /** @type {NeedId | ''} */ (sel.value);
+    setNeeds(picked ? [...rest, picked] : rest);
   });
 
   el('clear').addEventListener('click', () => setNeeds([]));

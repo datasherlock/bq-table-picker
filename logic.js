@@ -43,10 +43,10 @@
    */
   function summarize(types, needs) {
     const rows = types.map((type) => ({ type, verdict: verdictFor(type, needs) }));
-    // Only prefer open-lakehouse recommended types when the reader asked for open files or open-engine access.
-    const openNeed = needs.some((n) => n === 'openfiles' || n === 'direct' || n === 'directread');
+    // Only prefer open-lakehouse recommended types when the reader asked for open-engine access.
+    const openEngineNeed = needs.some((n) => n === 'direct' || n === 'directread');
     /** @param {{ type: TableType }} a @param {{ type: TableType }} b */
-    const byPreference = (a, b) => openNeed
+    const byPreference = (a, b) => openEngineNeed
       ? Number(Boolean(b.type.preferred)) - Number(Boolean(a.type.preferred)) : 0;
     const fits = rows.filter((r) => r.verdict.level === 'fit').sort(byPreference);
     const caveats = rows.filter((r) => r.verdict.level === 'caveat').sort(byPreference);

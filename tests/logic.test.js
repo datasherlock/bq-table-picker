@@ -75,7 +75,7 @@ test('known answers', () => {
 test('the type to show follows the needs: clear winner gets crowned, ties stay ties', () => {
   assert.equal(LOGIC.summarize(TYPES, []).pick, null);
   const openOnly = LOGIC.summarize(TYPES, ['openfiles']);
-  assert.equal(openOnly.pick.type.id, 'runtime');
+  assert.equal(openOnly.pick.type.id, 'managed');
   assert.equal(openOnly.clearWinner, null);
   assert.equal(LOGIC.summarize(TYPES, ['finegrained']).pick.type.id, 'standard');
   assert.equal(LOGIC.summarize(TYPES, ['bqsql']).pick.type.id, 'standard');
@@ -110,6 +110,12 @@ test('new inputs lead to the types built for them', () => {
   assert.deepEqual(fitIds(['hivemigrate']), ['hive']);
   assert.equal(LOGIC.summarize(TYPES, ['rawfiles']).clearWinner.type.id, 'biglake');
   assert.equal(LOGIC.summarize(TYPES, ['rawfiles', 'finegrained']).clearWinner.type.id, 'biglake');
+  assert.equal(LOGIC.summarize(TYPES, ['iceberg', 'remotecatalog']).clearWinner.type.id, 'federated');
+  const plainDeltaRemote = LOGIC.summarize(TYPES, ['rawfiles', 'remotecatalog']);
+  assert.equal(plainDeltaRemote.fits.length, 0);
+  assert.deepEqual(plainDeltaRemote.caveats.map((r) => r.type.id), ['biglake']);
+  assert.match(LOGIC.tipFor(TIPS, ['rawfiles', 'remotecatalog']) ?? '', /UniForm/);
+  assert.match(LOGIC.tipFor(TIPS, ['iceberg', 'rawfiles']) ?? '', /different formats/);
   assert.equal(LOGIC.summarize(TYPES, ['directread', 'bqsql', 'stream']).pick.type.id, 'managed');
   assert.equal(LOGIC.verdictFor(byId('managed'), ['directread']).level, 'caveat');
   assert.equal(LOGIC.summarize(TYPES, ['directread']).pick.type.id, 'runtime');
@@ -124,8 +130,12 @@ test('when nothing fits, dropping one need says what would', () => {
   assert.deepEqual(LOGIC.dropOptions(TYPES, ['unstructured', 'bqsql', 'othercloud']), []);
 });
 
-test('every need belongs to a known group', () => {
+test('every need belongs to a known group with a valid control kind', () => {
   const groups = DATA.NEED_GROUPS.map((g) => g.id);
+  for (const g of DATA.NEED_GROUPS) {
+    assert.ok(g.kind === 'select' || g.kind === 'multi', g.id);
+    if (g.kind === 'select') assert.ok(g.any && g.any.length > 0, `${g.id} needs an "any" label`);
+  }
   for (const n of NEEDS) assert.ok(groups.includes(n.group) && n.chip.length > 0, n.id);
 });
 

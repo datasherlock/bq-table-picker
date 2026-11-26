@@ -13,8 +13,8 @@
  * @typedef {{ ok: boolean, note?: string }} Rule
  * @typedef {'yes'|'partial'|'no'} FitLevel
  * @typedef {{ level: FitLevel, why?: string }} Fit
- * @typedef {'direct'|'bqsql'|'stream'|'directread'|'openfiles'|'rawfiles'|'othercloud'|'remotecatalog'|'hivemigrate'|'unstructured'|'finegrained'|'policytags'} NeedId
- * @typedef {'engines'|'storage'|'catalog'|'security'} NeedGroup
+ * @typedef {'direct'|'bqsql'|'stream'|'directread'|'openfiles'|'iceberg'|'rawfiles'|'othercloud'|'remotecatalog'|'hivemigrate'|'unstructured'|'finegrained'|'policytags'} NeedId
+ * @typedef {'storage'|'format'|'catalog'|'engines'|'security'} NeedGroup
  * @typedef {{
  *   id: string, name: string, short: string, group: 'bigquery'|'runtime',
  *   tag?: string, badge?: string, preferred?: boolean, legacy?: boolean, summary: string, saves: string,
@@ -30,26 +30,28 @@
 (function (root) {
   const DOCS = 'https://docs.cloud.google.com';
 
-  /** @type {{ id: NeedGroup, label: string }[]} */
+  /** @type {{ id: NeedGroup, label: string, kind: 'select'|'multi', any?: string }[]} */
   const NEED_GROUPS = [
-    { id: 'engines', label: 'Engines & access' },
-    { id: 'storage', label: 'Data & storage' },
-    { id: 'catalog', label: 'Existing catalog' },
-    { id: 'security', label: 'Security' },
+    { id: 'storage', label: 'Storage', kind: 'select', any: 'Any storage' },
+    { id: 'format', label: 'Table format', kind: 'select', any: 'Any format' },
+    { id: 'catalog', label: 'Existing catalog', kind: 'select', any: 'None / BigQuery' },
+    { id: 'engines', label: 'Engines & access', kind: 'multi' },
+    { id: 'security', label: 'Security', kind: 'multi' },
   ];
 
-  /** `chip` is the short label on the button. `label` is the full sentence. @type {{ id: NeedId, group: NeedGroup, chip: string, label: string, hint: string }[]} */
+  /** `chip` is the short label on the control. `label` is the full sentence. @type {{ id: NeedId, group: NeedGroup, chip: string, label: string, hint: string }[]} */
   const NEEDS = [
+    { id: 'openfiles', group: 'storage', chip: 'Open files in my GCS bucket', label: 'Open-format files in my own bucket', hint: 'Parquet or Iceberg files that you own.' },
+    { id: 'othercloud', group: 'storage', chip: 'Stays in another cloud', label: 'Data stays in another cloud', hint: 'Amazon S3, Azure or another data platform.' },
+    { id: 'iceberg', group: 'format', chip: 'Iceberg or Delta + UniForm', label: 'Apache Iceberg tables (or Delta Lake with UniForm)', hint: 'Tables that expose Apache Iceberg metadata, including Databricks Delta tables with Iceberg reads (UniForm) enabled.' },
+    { id: 'rawfiles', group: 'format', chip: 'Plain Delta, CSV, JSON or raw files', label: 'Plain Delta Lake, CSV, JSON, ORC, Avro or raw Parquet files', hint: 'Files without Iceberg metadata — plain Delta Lake (no UniForm), raw Parquet, CSV, JSON, ORC or Avro.' },
+    { id: 'unstructured', group: 'format', chip: 'Documents or media', label: 'The files are documents or media', hint: 'PDFs, images, audio or video.' },
+    { id: 'remotecatalog', group: 'catalog', chip: 'Another platform owns it', label: 'Another platform\'s catalog owns the tables', hint: 'For example Databricks Unity Catalog, Snowflake or AWS Glue.' },
+    { id: 'hivemigrate', group: 'catalog', chip: 'Hive Metastore today', label: 'I am moving off a Hive Metastore', hint: 'Existing Spark and Hive jobs that expect a metastore.' },
     { id: 'direct', group: 'engines', chip: 'Engines write directly', label: 'Spark, Flink or Trino write straight to the table', hint: 'They save their own changes. BigQuery is not in the write path.' },
     { id: 'bqsql', group: 'engines', chip: 'BigQuery SQL writes', label: 'BigQuery SQL changes the data', hint: 'INSERT, UPDATE, DELETE and MERGE.' },
     { id: 'stream', group: 'engines', chip: 'Stream in via BigQuery', label: 'Stream rows in through BigQuery', hint: 'Uses the BigQuery Storage Write API.' },
     { id: 'directread', group: 'engines', chip: 'Read without BigQuery API', label: 'Spark, Flink or Trino read without the BigQuery API', hint: 'Open engines read the table from storage via the catalog, without going through the BigQuery Storage Read API.' },
-    { id: 'openfiles', group: 'storage', chip: 'Open files in my bucket', label: 'Open-format files in my own bucket', hint: 'Parquet or Iceberg files that you own.' },
-    { id: 'rawfiles', group: 'storage', chip: 'Delta, CSV, JSON or raw files', label: 'Delta Lake, CSV, JSON, ORC, Avro or raw Parquet files', hint: 'Existing files in your bucket that are not Apache Iceberg tables.' },
-    { id: 'othercloud', group: 'storage', chip: 'Stays in another cloud', label: 'Data stays in another cloud', hint: 'Amazon S3, Azure or another data platform.' },
-    { id: 'unstructured', group: 'storage', chip: 'Documents or media', label: 'The files are documents or media', hint: 'PDFs, images, audio or video.' },
-    { id: 'remotecatalog', group: 'catalog', chip: 'Another catalog owns it', label: 'Another platform\'s catalog owns the tables', hint: 'For example Databricks Unity Catalog, Snowflake or AWS Glue.' },
-    { id: 'hivemigrate', group: 'catalog', chip: 'Hive Metastore today', label: 'I am moving off a Hive Metastore', hint: 'Existing Spark and Hive jobs that expect a metastore.' },
     { id: 'finegrained', group: 'security', chip: 'Row and column rules', label: 'Row filters and column masking', hint: 'Different people see different rows or masked values.' },
     { id: 'policytags', group: 'security', chip: 'Policy tags', label: 'Policy tags', hint: 'Tag sensitive columns once and control access by tag.' },
   ];
@@ -93,6 +95,7 @@
         bqsql: { level: 'yes' },
         stream: { level: 'yes' },
         openfiles: { level: 'no', why: 'The data lives in BigQuery storage.' },
+        iceberg: { level: 'no', why: 'The data lives in BigQuery storage, not as Iceberg tables.' },
         rawfiles: { level: 'no', why: 'The data is loaded into BigQuery storage, not read in place as files.' },
         othercloud: { level: 'no', why: 'The data is loaded into BigQuery storage.' },
         finegrained: { level: 'yes' },
@@ -137,6 +140,7 @@
         bqsql: { level: 'yes' },
         stream: { level: 'yes' },
         openfiles: { level: 'yes' },
+        iceberg: { level: 'yes' },
         rawfiles: { level: 'no', why: 'Stores Apache Iceberg tables only.' },
         othercloud: { level: 'no', why: GCS_ONLY },
         finegrained: { level: 'yes' },
@@ -181,6 +185,7 @@
         bqsql: { level: 'no', why: 'Read-only in BigQuery.' },
         stream: { level: 'no', why: 'Read-only in BigQuery.' },
         openfiles: { level: 'yes' },
+        iceberg: { level: 'partial', why: 'Reads Iceberg files read-only without tracking a catalog. For Iceberg tables, prefer Iceberg REST or Iceberg managed.' },
         rawfiles: { level: 'yes' },
         othercloud: { level: 'yes', why: 'Amazon S3 and Azure, through BigQuery Omni.' },
         finegrained: { level: 'yes' },
@@ -228,6 +233,7 @@
         bqsql: { level: 'no', why: 'Read-only in BigQuery.' },
         stream: { level: 'no', why: 'Read-only in BigQuery.' },
         openfiles: { level: 'yes' },
+        iceberg: { level: 'yes' },
         rawfiles: { level: 'no', why: 'Reads Apache Iceberg tables only.' },
         othercloud: { level: 'yes' },
         finegrained: { level: 'yes', why: 'Rules apply to BigQuery queries only.' },
@@ -273,6 +279,7 @@
         bqsql: { level: 'no', why: 'Read-only in BigQuery.' },
         stream: { level: 'no', why: 'Read-only in BigQuery.' },
         openfiles: { level: 'no', why: 'It lists files. It is not a table format.' },
+        iceberg: { level: 'no', why: STRUCTURED_ONLY },
         rawfiles: { level: 'no', why: 'Lists unstructured files rather than querying structured rows and columns.' },
         othercloud: { level: 'no', why: 'Not available for files in AWS or Azure.' },
         finegrained: { level: 'partial', why: 'Row filters only. They control which files a person sees.' },
@@ -288,8 +295,7 @@
       name: 'Apache Iceberg tables in the Lakehouse runtime catalog',
       short: 'Iceberg REST table',
       group: 'runtime',
-      tag: 'Recommended for new open tables',
-      badge: 'Recommended',
+      tag: 'Recommended for multi-engine open tables',
       preferred: true,
       summary: 'An open Iceberg table that many engines share. Spark, Flink, Trino and BigQuery all work on the same files in your bucket.',
       saves: 'Whichever engine writes. The catalog keeps the changes in order',
@@ -322,6 +328,7 @@
         bqsql: { level: 'partial', why: 'BigQuery SQL writes are in Preview.' },
         stream: { level: 'no', why: 'The Storage Write API is not available. Stream with an open engine instead.' },
         openfiles: { level: 'yes' },
+        iceberg: { level: 'yes' },
         rawfiles: { level: 'no', why: 'This endpoint manages Apache Iceberg tables only.' },
         othercloud: { level: 'no', why: GCS_ONLY },
         finegrained: { level: 'yes', why: 'Rules apply to BigQuery queries. Turn on credential vending so other engines cannot skip them.' },
@@ -366,6 +373,7 @@
         bqsql: { level: 'no', why: 'BigQuery can only read these tables.' },
         stream: { level: 'no', why: 'BigQuery can only read these tables.' },
         openfiles: { level: 'yes' },
+        iceberg: { level: 'no', why: 'Manages Hive-style tables, not Iceberg. Use the Iceberg REST endpoint instead.' },
         rawfiles: { level: 'partial', why: 'Supports Parquet, ORC, Avro and Delta Lake, but not CSV/JSON or row and column security.' },
         othercloud: { level: 'no', why: GCS_ONLY },
         finegrained: { level: 'no', why: 'IAM permissions only.' },
@@ -400,6 +408,7 @@
       },
       know: [
         'Nothing is copied or migrated.',
+        'Works with Iceberg tables — including Databricks Delta tables with UniForm enabled (without Deletion Vectors).',
         'The table list refreshes in the background, so new tables can take a while to appear.',
         'An optional cache keeps recently read data in Google Cloud to cut cross-cloud transfer costs.',
       ],
@@ -410,7 +419,8 @@
         bqsql: { level: 'no', why: 'Read-only on Google Cloud.' },
         stream: { level: 'no', why: 'Read-only on Google Cloud.' },
         openfiles: { level: 'partial', why: 'The files stay in the remote platform\'s storage.' },
-        rawfiles: { level: 'partial', why: 'Reads remote Iceberg tables (or Delta tables exposed over Iceberg REST / Delta Sharing), not raw bucket files.' },
+        iceberg: { level: 'yes', why: 'Reads remote Iceberg tables, including Databricks Delta tables with UniForm (without Deletion Vectors).' },
+        rawfiles: { level: 'no', why: 'Needs Iceberg metadata (or Delta with UniForm). For plain Delta or raw files, use BigLake.' },
         othercloud: { level: 'yes' },
         finegrained: { level: 'no', why: 'Table-level IAM only on Google Cloud.' },
         policytags: { level: 'no', why: 'Table-level IAM only on Google Cloud.' },
@@ -431,6 +441,8 @@
     { when: ['othercloud', 'stream'], text: 'Data that stays in another cloud is read-only from Google Cloud. Streaming through BigQuery needs a table on Google Cloud.' },
     { when: ['remotecatalog', 'direct'], text: 'The platform that manages the tables does the writing. Google Cloud reads them in place.' },
     { when: ['hivemigrate', 'finegrained'], text: 'Hive tables only have IAM permissions. For row filters and masking, convert the tables to Iceberg in the runtime catalog.' },
+    { when: ['iceberg', 'rawfiles'], text: 'These are different formats per table. Use Iceberg REST or Federated for Iceberg / Delta + UniForm, and BigLake for plain Delta or raw files.' },
+    { when: ['rawfiles', 'remotecatalog'], text: 'Federated catalogs need Iceberg metadata. For plain Delta or raw files, read the files with BigLake or turn on UniForm in Databricks to federate.' },
     { when: ['othercloud', 'direct'], text: 'Engines on Google Cloud only read data that stays in another cloud. The platform that owns it does the writing.' },
   ];
 
